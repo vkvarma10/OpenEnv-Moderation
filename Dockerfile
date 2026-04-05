@@ -12,9 +12,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY env/ env/
 
 # Copy app, configs, and inference script
-COPY app.py .
+COPY server/ server/
 COPY openenv.yaml .
 COPY inference.py .
 
 # Default command matches HF Spaces execution (uvicorn on port 7860)
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "7860"]

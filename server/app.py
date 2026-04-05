@@ -82,5 +82,8 @@ def get_state(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found.")
     return {"state": envs[session_id].state().model_dump()}
 
+def main():
+    uvicorn.run("server.app:app", host="0.0.0.0", port=7860)
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=7860)
+    main()
