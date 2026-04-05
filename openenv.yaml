@@ -1,0 +1,27 @@
+environment:
+  name: "OpenEnv-Moderation"
+  version: "1.0.0"
+  description: "AI-Powered Misinformation Moderation Environment"
+  entry_point: "env.environment:ModerationEnv"
+
+tasks:
+  - id: task_easy_01
+    difficulty: "EASY"
+    description: "Moderate a simple, obvious health claim."
+  - id: task_medium_01
+    difficulty: "MEDIUM"
+    description: "Moderate a misleading blog post about aliens."
+  - id: task_hard_01
+    difficulty: "HARD"
+    description: "Moderate a complex, subtle misinformation claim about vaccines with high user reputation."
+
+state_space:
+  type: "dict"
+
+action_space:
+  type: "pydantic"
+  model: "env.models:ActionModel"
+
+observation_space:
+  type: "pydantic"
+  model: "env.models:ObservationModel"

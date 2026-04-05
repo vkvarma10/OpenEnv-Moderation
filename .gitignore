@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.env
+.venv
+venv/
+env/bin/
+env/include/
+env/lib/
+# Do not ignore the actual OpenEnv env/ directory since it holds environment code!
+# So, we don't ignore env/ 
