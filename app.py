@@ -4,6 +4,7 @@ Exposes standard endpoints (/reset, /step, /state) required for OpenEnv validati
 """
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from typing import Optional
 import uvicorn
 import os
 import sys
@@ -37,11 +38,14 @@ def health_check():
     return {"status": "ok"}
 
 @app.post("/reset")
-def reset_env(req: ResetRequest):
+def reset_env(req: Optional[ResetRequest] = None):
     """
     Initialize or reset the environment correctly.
     Returns the initial observation space.
     """
+    if req is None:
+        req = ResetRequest()
+        
     try:
         env = ModerationEnv(task_id=req.task_id)
         obs = env.reset()
