@@ -12,10 +12,7 @@ import json
 import logging
 
 
-try:
-    from openai import OpenAI
-except ImportError:
-    OpenAI = None
+from llm_client import call_llm_api
 
 from env.environment import ModerationEnv
 from env.models import ActionModel
@@ -25,9 +22,7 @@ from env.grader import grade_trajectory
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
-API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
-MODEL_NAME = os.getenv("MODEL_NAME")
+MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4")
 
 def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
@@ -43,55 +38,10 @@ def log_end(success: bool, steps: int, score: float, rewards: list) -> None:
 
 class BaselineAgent:
     def __init__(self):
-        self.api_key = API_KEY
-        self.base_url = API_BASE_URL
-        self.model = MODEL_NAME or "gpt-4"
-        if self.api_key and self.base_url and OpenAI is not None:
-            self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
-        else:
-            self.client = None
-            logger.warning("No API_KEY or API_BASE_URL found, or openai package not installed. Using a deterministic mock agent.")
-            
-    def _call_llm(self, prompt: str) -> dict:
-        if self.client:
-            try:
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[
-                        {"role": "system", "content": "You are a moderation agent. You must output only a JSON object matching the requested schema. Evaluate step by step, choosing tools first."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=0.0,
-                    response_format={"type": "json_object"}
-                )
-                return json.loads(response.choices[0].message.content)
-            except Exception as e:
-                logger.error(f"OpenAI API call failed: {e}")
-                
-        # Mock logic based on trajectory length
-        step_idx = prompt.count("Action Taken:")
+        self.model = MODEL_NAME
         
-        if "pyramids" in prompt.lower() or "aliens" in prompt.lower():
-            if step_idx == 0:
-                return {"action_type": "TOOL", "next_tool": "extract_claims", "justification": "Extract claims."}
-            elif step_idx == 1:
-                return {"action_type": "TOOL", "next_tool": "verify_source", "justification": "Check source."}
-            else:
-                return {"action_type": "MODERATE", "classification": "MISLEADING", "confidence": 0.85, "action": "FLAG", "justification": "Source unreliable."}
-                
-        elif "vaccine" in prompt.lower() or "magnet" in prompt.lower():
-            if step_idx == 0:
-                return {"action_type": "TOOL", "next_tool": "extract_claims", "justification": "Extract claims."}
-            elif step_idx == 1:
-                return {"action_type": "TOOL", "next_tool": "run_fact_check", "justification": "Fact check."}
-            else:
-                return {"action_type": "MODERATE", "classification": "FAKE", "confidence": 0.95, "action": "REMOVE", "justification": "Dangerous misinfo."}
-                
-        else:
-            if step_idx == 0:
-                return {"action_type": "TOOL", "next_tool": "extract_claims", "justification": "Extract claims."}
-            else:
-                return {"action_type": "MODERATE", "classification": "REAL", "confidence": 0.9, "action": "ALLOW", "justification": "Safe health advice."}
+    def _call_llm(self, prompt: str) -> dict:
+        return call_llm_api(prompt, self.model)
 
     def solve_task(self, env: ModerationEnv) -> float:
         obs = env.reset()

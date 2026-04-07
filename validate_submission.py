@@ -8,7 +8,7 @@ def run_validation():
     # 1. HF Space deploys - Automated ping to Space URL
     # Check if app.py has a default @app.get("/")
     print("\n[1] Checking app.py for root health check...")
-    with open("app.py", "r") as f:
+    with open("server/app.py", "r") as f:
         app_content = f.read()
         if '@app.get("/")' in app_content:
             print("✓ Found root GET endpoint for automated pings.")
@@ -57,14 +57,24 @@ def run_validation():
 
     # 4. Baseline reproduces
     print("\n[4] Checking baseline logic and variables...")
+    if os.path.exists("llm_client.py"):
+        print("✓ llm_client.py found at root.")
+        with open("llm_client.py", "r") as f:
+            client_content = f.read()
+            if "API_BASE_URL" in client_content and "API_KEY" in client_content:
+                print("✓ llm_client.py explicitly checks for API_BASE_URL and API_KEY.")
+            else:
+                print("✗ llm_client.py does not use required LLM variables!")
+    else:
+        print("✗ llm_client.py NOT FOUND at root!")
+        
     if os.path.exists("inference.py"):
-        print("✓ inference.py found at root.")
         with open("inference.py", "r") as f:
             inf_content = f.read()
-            if "API_BASE_URL" in inf_content and "MODEL_NAME" in inf_content and "HF_TOKEN" in inf_content:
-                print("✓ inference.py uses API_BASE_URL, MODEL_NAME, and HF_TOKEN.")
+            if "llm_client" in inf_content:
+                print("✓ inference.py correctly imports from centralized llm_client.py")
             else:
-                print("✗ inference.py does not use all required LLM variables!")
+                print("✗ inference.py does NOT import llm_client.py!")
     else:
         print("✗ inference.py NOT FOUND at root!")
 
